@@ -1,0 +1,712 @@
+openapi: 3.0.2
+info:
+  title: "Tracer Study SMA API"
+  version: "1.0.0"
+  description: "API for managing high school alumni tracer studies using FastAPI and PostgreSQL"
+  contact:
+    name: "Development Team"
+    email: "dev@tracerstudy-sma.example.com"
+  license:
+    name: "MIT"
+
+servers:
+  - url: "http://localhost:8000"
+    description: "Development server"
+  - url: "https://api.tracerstudy-sma.example.com"
+    description: "Production server"
+
+tags:
+  - name: "auth"
+    description: "Authentication operations"
+  - name: "alumni"
+    description: "Alumni management"
+  - name: "tracer"
+    description: "Tracer study submissions"
+  - name: "referensi"
+    description: "Reference data for dropdowns and form options"
+  - name: "statistik"
+    description: "Statistical reports and analytics"
+  - name: "health"
+    description: "System health monitoring"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "JWT token authentication"
+
+  schemas:
+    # Alumni schemas
+    AlumniCheckRequest:
+      type: object
+      required:
+        - nisn
+        - nis
+        - nik
+        - tanggal_lahir
+      properties:
+        nisn:
+          type: string
+          minLength: 10
+          maxLength: 10
+          description: "Nomor Induk Siswa Nasional"
+          example: "1234567890"
+        nis:
+          type: string
+          description: "Nomor Induk Siswa"
+          example: "654321"
+        nik:
+          type: string
+          minLength: 16
+          maxLength: 16
+          description: "Nomor Induk Kependudukan"
+          example: "1234567890123456"
+        tanggal_lahir:
+          type: string
+          format: date
+          description: "Tanggal lahir (format YYYY-MM-DD)"
+          example: "2000-01-15"
+
+    AlumniResponse:
+      type: object
+      properties:
+        id_alumni:
+          type: integer
+          example: 42
+        nama_siswa:
+          type: string
+          example: "John Doe"
+        tahun_lulus:
+          type: integer
+          example: 2022
+
+    AlumniCreate:
+      type: object
+      required:
+        - nisn
+        - nis
+        - nik
+        - nama_siswa
+        - tanggal_lahir
+        - tahun_lulus
+      properties:
+        nisn:
+          type: string
+          minLength: 10
+          maxLength: 10
+          example: "1234567890"
+        nis:
+          type: string
+          example: "654321"
+        nik:
+          type: string
+          minLength: 16
+          maxLength: 16
+          example: "1234567890123456"
+        nama_siswa:
+          type: string
+          example: "Jane Smith"
+        tanggal_lahir:
+          type: string
+          format: date
+          example: "2001-05-20"
+        tahun_lulus:
+          type: integer
+          minimum: 1900
+          example: 2023
+
+    AlumniDetail:
+      type: object
+      properties:
+        id_alumni:
+          type: integer
+          example: 42
+        nisn:
+          type: string
+          example: "1234567890"
+        nis:
+          type: string
+          example: "654321"
+        nik:
+          type: string
+          example: "1234567890123456"
+        nama_siswa:
+          type: string
+          example: "John Doe"
+        tanggal_lahir:
+          type: string
+          format: date
+          example: "2000-01-15"
+        tahun_lulus:
+          type: integer
+          example: 2022
+        is_filled:
+          type: boolean
+          example: true
+        kode_status:
+          type: string
+          example: "MELANJUTKAN"
+        status:
+          type: string
+          example: "Melanjutkan Pendidikan"
+        perguruan_tinggi:
+          type: string
+          example: "Universitas Indonesia"
+        program_studi:
+          type: string
+          example: "Teknik Informatika"
+        sumber_biaya:
+          type: string
+          example: "Orang Tua"
+        tahun_masuk:
+          type: integer
+          example: 2022
+
+    KuesionerItem:
+      type: object
+      properties:
+        pertanyaan:
+          type: string
+          example: "Apakah perguruan tinggi sesuai dengan minat?"
+        jawaban:
+          type: string
+          example: "Ya"
+
+    AlumniDetailResponse:
+      type: object
+      properties:
+        alumni:
+          $ref: "#/components/schemas/AlumniDetail"
+        kuesioner:
+          type: array
+          items:
+            $ref: "#/components/schemas/KuesionerItem"
+
+    # Tracer schemas
+    TracerData:
+      type: object
+      required:
+        - id_alumni
+        - alamat_email
+        - no_telepon
+        - status
+        - perguruan_tinggi
+        - program_studi
+        - sumber_biaya
+        - tahun_masuk
+        - jawaban_kuesioner
+      properties:
+        id_alumni:
+          type: integer
+          example: 42
+        alamat_email:
+          type: string
+          format: email
+          example: "john.doe@example.com"
+        no_telepon:
+          type: string
+          minLength: 10
+          maxLength: 15
+          example: "08123456789"
+        status:
+          type: string
+          example: "Melanjutkan Pendidikan"
+        perguruan_tinggi:
+          type: string
+          example: "Universitas Indonesia"
+        program_studi:
+          type: string
+          example: "Teknik Informatika"
+        sumber_biaya:
+          type: string
+          example: "Orang Tua"
+        tahun_masuk:
+          type: integer
+          minimum: 1900
+          example: 2022
+        jawaban_kuesioner:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            "Apakah perguruan tinggi sesuai dengan minat?": "Ya"
+            "Bagaimana persiapan dari SMA?": "Sangat Membantu"
+
+    # Reference schemas
+    PerguruanTinggiProdi:
+      type: object
+      properties:
+        perguruan_tinggi:
+          type: string
+          example: "Universitas Indonesia"
+        nama_program_studi:
+          type: string
+          example: "Teknik Informatika"
+
+    Kuesioner:
+      type: object
+      properties:
+        id_kuesioner:
+          type: integer
+          example: 1
+        pertanyaan:
+          type: string
+          example: "Apakah perguruan tinggi sesuai dengan minat?"
+
+    Jawaban:
+      type: object
+      properties:
+        id_jawaban:
+          type: integer
+          example: 1
+        jawaban:
+          type: string
+          example: "Ya"
+
+    KuesionerData:
+      type: object
+      properties:
+        pertanyaan:
+          type: array
+          items:
+            $ref: "#/components/schemas/Kuesioner"
+        jawaban:
+          type: array
+          items:
+            $ref: "#/components/schemas/Jawaban"
+
+    StatusOption:
+      type: object
+      properties:
+        kode_status:
+          type: string
+          example: "MELANJUTKAN"
+        status:
+          type: string
+          example: "Melanjutkan Pendidikan"
+
+    # Statistics schemas
+    AlumniStatistics:
+      type: object
+      properties:
+        tahun_lulus:
+          type: integer
+          example: 2022
+        jumlah_alumni:
+          type: integer
+          example: 150
+        alumni_mengisi:
+          type: integer
+          example: 120
+        lanjut_pendidikan:
+          type: integer
+          example: 90
+
+    KuesionerStatistics:
+      type: object
+      properties:
+        fill_date:
+          type: string
+          format: date
+          example: "2023-01-15"
+        pertanyaan:
+          type: string
+          example: "Apakah perguruan tinggi sesuai dengan minat?"
+        jawaban:
+          type: string
+          example: "Ya"
+        jumlah:
+          type: integer
+          example: 85
+
+    # Auth schemas
+    LoginRequest:
+      type: object
+      required:
+        - nama
+        - password
+      properties:
+        nama:
+          type: string
+          minLength: 1
+          example: "admin"
+        password:
+          type: string
+          minLength: 6
+          example: "password123"
+          format: password
+
+    Token:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        token_type:
+          type: string
+          example: "bearer"
+
+    # Common schemas
+    Message:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Operation successful"
+
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+          example: "Error message explaining what went wrong"
+
+    HealthCheck:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "healthy"
+
+paths:
+  # Health check endpoint
+  /health:
+    get:
+      tags:
+        - "health"
+      summary: "Check service health status"
+      description: "Returns health status of the service"
+      operationId: "healthCheck"
+      responses:
+        '200':
+          description: "Service is healthy"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthCheck"
+
+  # Alumni endpoints
+  /alumni/check:
+    post:
+      tags:
+        - "alumni"
+      summary: "Verify alumni identity"
+      description: "Check if an alumni exists based on NISN, NIS, NIK, and birth date"
+      operationId: "checkAlumni"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlumniCheckRequest"
+      responses:
+        '200':
+          description: "Alumni found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlumniResponse"
+        '404':
+          description: "Alumni not found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '500':
+          description: "Internal server error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /alumni/create:
+    post:
+      tags:
+        - "alumni"
+      summary: "Create new alumni record"
+      description: "Add a new alumni to the database (requires authentication)"
+      operationId: "createAlumni"
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlumniCreate"
+      responses:
+        '200':
+          description: "Alumni created successfully"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+        '400':
+          description: "Invalid input or alumni already exists"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '401':
+          description: "Unauthorized"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '500':
+          description: "Internal server error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /alumni/{id_alumni}:
+    get:
+      tags:
+        - "alumni"
+      summary: "Get alumni details"
+      description: "Retrieve detailed information about an alumni, including tracer data if available (requires authentication)"
+      operationId: "getAlumniDetail"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id_alumni
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: "ID of the alumni to retrieve"
+          example: 42
+      responses:
+        '200':
+          description: "Alumni details retrieved successfully"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlumniDetailResponse"
+        '401':
+          description: "Unauthorized"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '404':
+          description: "Alumni not found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '500':
+          description: "Internal server error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # Tracer endpoints
+  /tracer/submit:
+    post:
+      tags:
+        - "tracer"
+      summary: "Submit tracer study data"
+      description: "Submit tracer study data including education details and questionnaire answers"
+      operationId: "submitTracer"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                data:
+                  $ref: "#/components/schemas/TracerData"
+                bukti_kuliah:
+                  type: string
+                  format: binary
+                  description: "Document proof of enrollment (PDF or image)"
+      responses:
+        '200':
+          description: "Tracer data submitted successfully"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+        '400':
+          description: "Invalid input data"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '500':
+          description: "Internal server error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # Reference data endpoints
+  /referensi/perguruan-tinggi:
+    get:
+      tags:
+        - "referensi"
+      summary: "Get universities and study programs"
+      description: "Retrieve list of universities and their associated study programs"
+      operationId: "getUniversitiesAndPrograms"
+      responses:
+        '200':
+          description: "List of universities and programs retrieved"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PerguruanTinggiProdi"
+        '500':
+          description: "Internal server error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /referensi/kuesioner:
+    get:
+      tags:
+        - "referensi"
+      summary: "Get questionnaire data"
+      description: "Retrieve questionnaire questions and possible answers"
+      operationId: "getQuestionnaire"
+      responses:
+        '200':
+          description: "Questionnaire data retrieved successfully"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KuesionerData"
+        '500':
+          description: "Internal server error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /referensi/status:
+    get:
+      tags:
+        - "referensi"
+      summary: "Get alumni status options"
+      description: "Retrieve possible alumni status options"
+      operationId: "getStatusOptions"
+      responses:
+        '200':
+          description: "Status options retrieved successfully"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StatusOption"
+        '500':
+          description: "Internal server error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # Statistics endpoints
+  /statistik/alumni:
+    get:
+      tags:
+        - "statistik"
+      summary: "Get alumni statistics by year"
+      description: "Retrieve alumni statistics aggregated by graduation year (requires authentication)"
+      operationId: "getAlumniStatistics"
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: "Statistics retrieved successfully"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AlumniStatistics"
+        '401':
+          description: "Unauthorized"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '500':
+          description: "Internal server error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /statistik/kuesioner:
+    get:
+      tags:
+        - "statistik"
+      summary: "Get questionnaire response statistics"
+      description: "Retrieve statistics of questionnaire responses (requires authentication)"
+      operationId: "getQuestionnaireStatistics"
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: "Questionnaire statistics retrieved successfully"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/KuesionerStatistics"
+        '401':
+          description: "Unauthorized"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '500':
+          description: "Internal server error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # Auth endpoints
+  /auth/login:
+    post:
+      tags:
+        - "auth"
+      summary: "User login"
+      description: "Authenticate user and get access token"
+      operationId: "userLogin"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        '200':
+          description: "Login successful"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Token"
+        '401':
+          description: "Invalid credentials"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        '500':
+          description: "Internal server error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
