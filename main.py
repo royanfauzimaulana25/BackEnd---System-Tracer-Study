@@ -2,7 +2,6 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional
 import asyncpg
 import os
 from dotenv import load_dotenv
