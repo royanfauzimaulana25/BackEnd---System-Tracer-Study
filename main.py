@@ -46,14 +46,14 @@ class AlumniCheckRequest(BaseModel):
     tanggal_lahir: date
 
 class TracerData(BaseModel):
-    id_alumni: int
+    id_alumni: str
     alamat_email: str
     no_telepon: str
     status: str
     perguruan_tinggi: str
     program_studi: str
     sumber_biaya: str
-    tahun_masuk: int
+    tahun_masuk: str
     jawaban_kuesioner: dict
 
 class AlumniCreate(BaseModel):
@@ -62,7 +62,7 @@ class AlumniCreate(BaseModel):
     nik: str
     nama_siswa: str
     tanggal_lahir: date
-    tahun_lulus: int
+    tahun_lulus: str
 
 class LoginRequest(BaseModel):
     email: str = Form(...)
