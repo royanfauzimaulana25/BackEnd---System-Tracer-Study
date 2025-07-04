@@ -6,7 +6,7 @@ import asyncpg
 import os
 from dotenv import load_dotenv
 from datetime import date
-from typing import Optional, Dict
+from typing import Optional, Dict, Annotated
 import hypercorn
 from supabase import create_client, Client
 import json
@@ -53,7 +53,7 @@ class TracerData(BaseModel):
     perguruan_tinggi: str
     program_studi: str
     sumber_biaya: str
-    tahun_masuk: str
+    tahun_masuk: int
     jawaban_kuesioner: dict
 
 class AlumniCreate(BaseModel):
@@ -62,7 +62,7 @@ class AlumniCreate(BaseModel):
     nik: str
     nama_siswa: str
     tanggal_lahir: date
-    tahun_lulus: str
+    tahun_lulus: int
 
 class LoginRequest(BaseModel):
     email: str = Form(...)
@@ -81,9 +81,7 @@ class DetailPendidikan(BaseModel):
 class SubmissionPayload(BaseModel):
     id_alumni: str
     personal_data: PersonalData
-    status: str  # Ini adalah kode_status, contoh: 'PEND'
-    # Kuesioner dalam format { "id_kuesioner": "id_jawaban" }
-    # Kunci dan nilai akan divalidasi sebagai integer
+    status: str
     kuesioner: Dict[int, int]
     detail_pendidikan: Optional[DetailPendidikan] = None
 
@@ -137,7 +135,6 @@ async def submit_tracer(data: TracerData, bukti_kuliah: UploadFile = File(...)):
     await conn.close()
     return {"message": "Tracer data submitted successfully"}
 
-# 3. Get Perguruan Tinggi dan Program Studi
 # 3. Get Perguruan Tinggi dan Program Studi
 @app.get("/referensi/perguruan-tinggi")
 async def get_pt_prodi():
@@ -386,8 +383,8 @@ async def get_program_studi(id_perguruan_tinggi: int):
 # 15. Submit kuesioner (Versi baru yang lebih baik)
 @app.post("/questionnaire/submit", tags=["Tracer"])
 async def submit_questionnaire(
-    payload_str: str = Form(..., alias="payload"),
-    bukti_kuliah: Optional[UploadFile] = File(None)
+        payload_str: Annotated[str, Form(alias="payload")],
+        bukti_kuliah: Annotated[Optional[UploadFile], File()] = None,
 ):
     """
     Endpoint untuk menyimpan seluruh data kuesioner tracer study.
@@ -406,6 +403,7 @@ async def submit_questionnaire(
     # Gunakan transaksi untuk memastikan semua data berhasil dimasukkan atau tidak sama sekali
     async with conn.transaction():
         try:
+            print(payload.detail_pendidikan)
             # 1. Update data personal alumni (email dan telepon)
             await conn.execute("""
                 UPDATE alumni
