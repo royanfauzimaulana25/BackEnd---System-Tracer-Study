@@ -309,6 +309,7 @@ async def detail_alumni(id_alumni: str):
 async def login(data: LoginRequest):
     conn = await get_db()
     result = await conn.fetchrow('SELECT nama FROM "user" WHERE username=$1 AND password=$2', data.email, data.password)
+
     await conn.close()
     if not result:
         raise HTTPException(status_code=401, detail="Invalid credentials")
