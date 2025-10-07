@@ -603,12 +603,12 @@ async def delete_alumni(id_alumni: str):
         )
 
         # Mengecek apakah ada baris yang benar-benar terhapus
-        deleted_count = int(result_status.split()[-1])
-        if deleted_count == 0:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Alumni with ID '{id_alumni}' not found."
-            )
+        # deleted_count = int(result_status.split()[-1])
+        # if deleted_count == 0:
+        #     raise HTTPException(
+        #         status_code=404,
+        #         detail=f"Alumni with ID '{id_alumni}' not found."
+        #     )
 
         return {"message": f"Alumni with ID '{id_alumni}' and all related data deleted successfully."}
 
