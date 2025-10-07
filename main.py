@@ -579,3 +579,45 @@ async def get_all_alumni_tracer_data():
 
     finally:
         await conn.close()
+
+# 17. Delete Alumni Data
+@app.delete("/alumni/{id_alumni}", tags=["Alumni"])
+async def delete_alumni(id_alumni: str):
+    """
+    Menghapus data alumni berdasarkan ID.
+
+    **Penting**: Endpoint ini mengasumsikan bahwa database Anda telah dikonfigurasi
+    dengan 'ON DELETE CASCADE' pada foreign key dari tabel `alumni` ke `tracer`.
+    Ini akan memastikan semua data terkait (tracer, detail pendidikan, kuesioner)
+    juga ikut terhapus.
+
+    - **id_alumni**: ID unik dari alumni yang akan dihapus.
+    """
+    conn = await get_db()
+    try:
+        # Menjalankan perintah DELETE dan mendapatkan statusnya
+        # Format status dari asyncpg adalah 'DELETE N' dimana N adalah jumlah baris yang terhapus
+        result_status = await conn.execute(
+            "DELETE FROM alumni WHERE id_alumni = $1",
+            id_alumni
+        )
+
+        # Mengecek apakah ada baris yang benar-benar terhapus
+        deleted_count = int(result_status.split()[-1])
+        if deleted_count == 0:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Alumni with ID '{id_alumni}' not found."
+            )
+
+        return {"message": f"Alumni with ID '{id_alumni}' and all related data deleted successfully."}
+
+    except Exception as e:
+        # Menangkap error umum dari database
+        raise HTTPException(
+            status_code=500,
+            detail=f"An error occurred while deleting alumni data: {str(e)}"
+        )
+    finally:
+        # Memastikan koneksi selalu ditutup
+        await conn.close()
